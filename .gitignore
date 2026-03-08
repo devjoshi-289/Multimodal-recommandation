@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.env
+
+# Data and Models (Large files)
+data/filtered_images/
+data/*.pth
+data/*.pt
+data/articles_filtered.csv
+data/transactions_small.csv
+data/interactions_encoded.csv
+data/item_features_encoded.csv
+best_model.pth
+
+# Temp / Uploads
+temp_uploads/
+temp_query.jpg
+dataset/
+embeddings/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store

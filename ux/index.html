@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion | AI Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="top-banner">
+        <span>Free shipping above $40 & Free returns</span>
+    </div>
+
+    <nav class="brand-nav">
+        <div class="nav-left">
+            <span class="nav-item">Customer Service</span>
+            <span class="nav-item">Students Area</span>
+            <span class="nav-item">Find a store</span>
+        </div>
+
+        <div class="brand-logo">LUMINA</div>
+
+        <div class="nav-actions">
+            <button class="icon-text-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Sign in
+            </button>
+            <button class="icon-text-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                    </path>
+                </svg>
+                Favorites
+            </button>
+            <button class="icon-text-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                Shopping bag (0)
+            </button>
+        </div>
+    </nav>
+
+    <div class="category-nav">
+        <a href="#">Women</a>
+        <a href="#">Men</a>
+        <a href="#">Divided</a>
+        <a href="#">Baby</a>
+        <a href="#">Kids</a>
+        <a href="#">HOME</a>
+        <a href="#">Beauty</a>
+        <a href="#">Sport</a>
+        <a href="#">Sustainability</a>
+    </div>
+
+    <main class="page-wrapper">
+        <header class="hero-section">
+            <h1 class="hero-title">Discover Something New</h1>
+            <p class="hero-subtitle">Experience our AI stylist. Search visually or descriptively for styles.</p>
+        </header>
+
+        <section class="search-container">
+            <form id="search-form" class="search-form">
+
+                <div class="unified-search-box">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+
+                    <input type="text" id="text-query" placeholder="Search products, colors, styles..."
+                        autocomplete="off">
+
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="image-upload" accept="image/*" hidden>
+                        <button type="button" class="icon-btn tooltip-trigger" id="upload-trigger"
+                            aria-label="Upload Image">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <span class="tooltip">Search with an image</span>
+                        </button>
+                    </div>
+
+                    <button type="submit" class="search-submit-btn" id="search-btn">
+                        Search
+                    </button>
+                </div>
+
+                <div class="preview-area hidden" id="preview-area">
+                    <div class="preview-image-wrapper">
+                        <img id="image-preview" src="" alt="Preview">
+                        <button type="button" class="remove-btn" id="remove-btn"
+                            aria-label="Remove image">&times;</button>
+                    </div>
+                    <span class="preview-text">Image included in search</span>
+                </div>
+            </form>
+        </section>
+
+        <!-- Drag overlay -->
+        <div class="drag-overlay hidden" id="drag-overlay">
+            <div class="drag-overlay-content">
+                <div class="animated-dropzone">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </div>
+                <h2>Drop inspiration here</h2>
+                <p>We'll find the closest matches in our collection.</p>
+            </div>
+        </div>
+
+        <section id="loading-state" class="loading-state hidden">
+            <div class="brand-loader"></div>
+            <p>Curating matches matching your style...</p>
+        </section>
+
+        <section id="results-section" class="results-section hidden">
+            <div class="results-layout">
+                <aside class="sidebar-filters">
+                    <h3>Filter & Sort</h3>
+                    <div class="filter-group">
+                        <h4>Sort by</h4>
+                        <label class="radio-label"><input type="radio" name="sort" checked> Recommended</label>
+                        <label class="radio-label"><input type="radio" name="sort"> Newest</label>
+                        <label class="radio-label"><input type="radio" name="sort"> Lowest Price</label>
+                    </div>
+                    <div class="filter-group">
+                        <h4>Category</h4>
+                        <label class="checkbox-label"><input type="checkbox"> Dresses</label>
+                        <label class="checkbox-label"><input type="checkbox"> Tops</label>
+                        <label class="checkbox-label"><input type="checkbox"> Accessories</label>
+                    </div>
+                </aside>
+
+                <div class="results-main">
+                    <div class="results-header">
+                        <span class="results-count">Showing top results</span>
+                        <div class="view-toggles">
+                            <span class="active">|||</span>
+                            <span>||||</span>
+                        </div>
+                    </div>
+                    <div id="results-grid" class="results-grid"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="brand-footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>SHOP</h4>
+                <a href="#">Ladies</a>
+                <a href="#">Men</a>
+                <a href="#">Baby</a>
+                <a href="#">Kids</a>
+                <a href="#">HOME</a>
+            </div>
+            <div class="footer-col">
+                <h4>CORPORATE INFO</h4>
+                <a href="#">Career</a>
+                <a href="#">About us</a>
+                <a href="#">Sustainability</a>
+                <a href="#">Press</a>
+                <a href="#">Investor Relations</a>
+            </div>
+            <div class="footer-col">
+                <h4>HELP</h4>
+                <a href="#">Customer Service</a>
+                <a href="#">My Account</a>
+                <a href="#">Find a store</a>
+                <a href="#">Legal & Privacy</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <h2 class="brand-logo-large">LUMINA</h2>
+            <p>The content of this site is copyright-protected.</p>
+            <p>READ MORE</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
