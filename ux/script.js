@@ -13,8 +13,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingState = document.getElementById('loading-state');
     const resultsSection = document.getElementById('results-section');
     const resultsGrid = document.getElementById('results-grid');
+    const paginationControls = document.getElementById('pagination-controls');
+    const loadMoreBtn = document.getElementById('load-more-btn');
 
     let currentFile = null;
+    let currentCategory = null;
+    let currentOffset = 0;
+    const LIMIT = 20;
+
+    // --- Category Navigation Logic --- //
+    const categoryLinks = document.querySelectorAll('.category-nav a[data-category]');
+    categoryLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Reset state
+            currentCategory = link.getAttribute('data-category');
+            textQuery.value = '';
+            removeBtn.click(); // Clear any uploaded image
+
+            // Highlight active link (optional UI touch)
+            categoryLinks.forEach(l => l.style.fontWeight = 'normal');
+            link.style.fontWeight = 'bold';
+
+            // Trigger search from offset 0
+            triggerSearch(true);
+        });
+    });
 
     // --- Drag and Drop Logic --- //
     // The entire window can accept drops now for that premium feel
@@ -96,19 +120,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Search Submission --- //
     searchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        currentCategory = null; // Clear category filter if doing a fresh text/image search
+        categoryLinks.forEach(l => l.style.fontWeight = 'normal'); // remove highlights
+        triggerSearch(true);
+    });
 
+    loadMoreBtn.addEventListener('click', () => {
+        triggerSearch(false);
+    });
+
+    async function triggerSearch(isNewSearch = true) {
         const query = textQuery.value.trim();
 
-        if (!query && !currentFile) {
-            // Subtle alert
-            alert('Please search by keyword or upload a standard image.');
+        if (isNewSearch) {
+            currentOffset = 0;
+            resultsGrid.innerHTML = ''; // Only clear grid on fresh searches
+        } else {
+            currentOffset += LIMIT;
+        }
+
+        if (!query && !currentFile && !currentCategory) {
+            alert('Please search by keyword, upload an image, or select a category.');
             textQuery.focus();
             return;
         }
 
-        // UX: Show searching state
-        resultsSection.classList.add('hidden');
-        loadingState.classList.remove('hidden');
+        // UX: Show searching state (only if it's a new search)
+        if (isNewSearch) {
+            resultsSection.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+        } else {
+            loadMoreBtn.innerHTML = 'Loading...';
+            loadMoreBtn.disabled = true;
+        }
+
         searchBtn.disabled = true;
         searchBtn.style.opacity = '0.5';
 
@@ -116,6 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         if (query) formData.append('text_query', query);
         if (currentFile) formData.append('image_file', currentFile);
+        if (currentCategory) formData.append('category', currentCategory);
+        formData.append('limit', LIMIT);
+        formData.append('offset', currentOffset);
 
         try {
             const response = await fetch('http://localhost:8000/search', {
@@ -131,27 +179,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Artificial delay to show off the nice loading animation UX
             setTimeout(() => {
-                renderResults(data);
-                loadingState.classList.add('hidden');
+                renderResults(data, isNewSearch);
+
+                if (isNewSearch) {
+                    loadingState.classList.add('hidden');
+                    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
                 searchBtn.disabled = false;
                 searchBtn.style.opacity = '1';
-                // Scroll to results smoothly
-                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                loadMoreBtn.innerHTML = 'Load More';
+                loadMoreBtn.disabled = false;
+
+                // If fewer items returned than limit, hide Load More
+                if (data.length < LIMIT) {
+                    paginationControls.classList.add('hidden');
+                } else {
+                    paginationControls.classList.remove('hidden');
+                }
             }, 800);
 
         } catch (error) {
             console.error('Search failed:', error);
-            simulateSearchDemo();
+            simulateSearchDemo(isNewSearch);
         }
-    });
+    }
 
     // --- UI Rendering --- //
-    function renderResults(data) {
-        resultsGrid.innerHTML = '';
-
+    function renderResults(data, isNewSearch) {
         let items = Array.isArray(data) ? data : (data.results || []);
 
-        if (items.length === 0) {
+        if (items.length === 0 && isNewSearch) {
             resultsGrid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 4rem 0;">
                     <h3 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1rem;">No matches found</h3>
@@ -159,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             resultsSection.classList.remove('hidden');
+            paginationControls.classList.add('hidden');
             return;
         }
 
@@ -198,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // A simple demonstration method injected to show the UI working during tests
-    function simulateSearchDemo() {
+    function simulateSearchDemo(isNewSearch) {
         setTimeout(() => {
             const demoData = {
                 results: [
@@ -224,11 +283,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 ]
             };
-            renderResults(demoData);
-            loadingState.classList.add('hidden');
+            renderResults(demoData, isNewSearch);
+
+            if (isNewSearch) {
+                loadingState.classList.add('hidden');
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
             searchBtn.disabled = false;
             searchBtn.style.opacity = '1';
-            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            loadMoreBtn.innerHTML = 'Load More';
+            loadMoreBtn.disabled = false;
+            paginationControls.classList.remove('hidden');
         }, 1500); // simulate 1.5s network delay
     }
 });

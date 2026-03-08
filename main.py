@@ -39,12 +39,15 @@ def read_root():
 @app.post("/search")
 async def search_endpoint(
     text_query: Optional[str] = Form(None),
-    image_file: Optional[UploadFile] = File(None)
+    image_file: Optional[UploadFile] = File(None),
+    category: Optional[str] = Form(None),
+    limit: int = Form(20),
+    offset: int = Form(0)
 ):
-    logger.info(f"Received search request. Text: {text_query}, Image: {image_file.filename if image_file else None}")
+    logger.info(f"Received search request. Text: {text_query}, Image: {image_file.filename if image_file else None}, Category: {category}, Limit: {limit}, Offset: {offset}")
     
-    if not text_query and not image_file:
-        raise HTTPException(status_code=400, detail="Must provide at least text_query or image_file.")
+    if not text_query and not image_file and not category:
+        raise HTTPException(status_code=400, detail="Must provide at least text_query, image_file, or category.")
     
     image_path = None
     if image_file:
@@ -53,7 +56,13 @@ async def search_endpoint(
             shutil.copyfileobj(image_file.file, buffer)
             
     try:
-        results = multimodal_search(image_path=image_path, text_query=text_query)
+        results = multimodal_search(
+            image_path=image_path, 
+            text_query=text_query,
+            category=category,
+            limit=limit,
+            offset=offset
+        )
         return results
     except Exception as e:
         logger.error(f"Error during search: {str(e)}")

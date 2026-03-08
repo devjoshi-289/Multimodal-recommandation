@@ -14,45 +14,97 @@ article_dict = articles_db.set_index("article_id")["prod_name"].to_dict()
 all_item_idx = torch.tensor(text_data_db["item_idx"])
 all_text_embeddings = torch.from_numpy(np.array(text_data_db["embeddings"])).float()
 
+# Precompute categories mapping (we map idx -> index_group_name)
+# We need an array aligned with all_item_idx so we can quickly filter
+idx_categories = articles_db["index_group_name"].values
+
 # Normalize once to speed up cosine similarity
 all_text_embeddings = F.normalize(all_text_embeddings, p=2, dim=1)
 
 # Precompute image embeddings
 if image_data_db is not None:
     all_image_idx = torch.tensor(image_data_db["item_idx"])
+    
+    # Map article_id back to df index, then to category. Handle missing gracefully
+    article_idx_map = articles_db.reset_index().set_index("article_id")["index"].to_dict()
+    img_categories = []
+    
+    for aid in all_image_idx.tolist():
+        df_idx = article_idx_map.get(aid)
+        if df_idx is not None:
+            img_categories.append(idx_categories[df_idx])
+        else:
+            img_categories.append("Unknown")
+            
+    img_categories = np.array(img_categories)
+
     all_image_embeddings = torch.from_numpy(np.array(image_data_db["embeddings"])).float()
     all_image_embeddings = F.normalize(all_image_embeddings, p=2, dim=1)
 else:
     all_image_idx = None
     all_image_embeddings = None
+    img_categories = None
 
-def multimodal_search(image_path=None, text_query=None):
+def multimodal_search(image_path=None, text_query=None, category=None, limit=20, offset=0):
     """
     Computes similarity between the inputs and dataset items.
-    Returns the top 5 most similar products.
+    Returns the most similar products with pagination and category filtering.
     """
-    logger.info(f"Starting search with text: '{text_query}', image: {image_path}")
+    logger.info(f"Search params -> text: '{text_query}', image: {image_path}, category: {category}, limit: {limit}, offset: {offset}")
     
-    top_indices = []
+    # 0. Pure Category Browsing (No text, no image)
+    if not text_query and not image_path and category:
+        category_mask = (articles_db["index_group_name"] == category)
+        filtered_df = articles_db[category_mask]
+        
+        # Determine slice safely
+        total_items = len(filtered_df)
+        if offset >= total_items:
+            return []
+            
+        end_idx = min(offset + limit, total_items)
+        page_df = filtered_df.iloc[offset:end_idx]
+        
+        results = []
+        for _, row in page_df.iterrows():
+            aid = row["article_id"]
+            prod_name = row["prod_name"]
+            results.append({
+                "image": f"http://localhost:8000/images/0{aid}.jpg",
+                "name": prod_name,
+                "similarity": None  # No AI score for pure browsing
+            })
+            
+        logger.info(f"Category '{category}' browse returned {len(results)} items.")
+        return results
     
-    # 1. Text Search Using SentenceTransformers (all-MiniLM-L6-v2)
+    # 1. Text Search Using SentenceTransformers
     if text_query:
         query_emb = encode_text(text_query).float().cpu()
-        # Cosine similarity
         query_emb = F.normalize(query_emb, p=2, dim=0).unsqueeze(0)
         similarities = torch.mm(query_emb, all_text_embeddings.transpose(0, 1)).squeeze(0)
         
-        # Get top 5 indices
-        top_k = 5
-        scores, top_idx_tensors = torch.topk(similarities, k=top_k)
+        # Apply category filter by setting masked similarities to -inf
+        if category:
+            mask = torch.tensor(idx_categories == category)
+            similarities[~mask] = float('-inf')
         
-        # We can also run the HybridNCF for these items given a mock user
-        # to boost personalization, but for pure search, similarity is best.
+        # Get top k = offset + limit items to allow pagination
+        k = offset + limit
+        if k > len(similarities):
+            k = len(similarities)
+            
+        scores, top_idx_tensors = torch.topk(similarities, k=k)
         
         results = []
-        for i in range(top_k):
+        # Slice the results according to offset
+        for i in range(offset, len(scores)):
             idx = int(top_idx_tensors[i])
             score = float(scores[i])
+            
+            # Skip masked out results
+            if score == float('-inf'):
+                break
             
             # map index back to real article_id from articles_db
             # since text_embeddings were created in the order of articles_filtered.csv
@@ -87,16 +139,25 @@ def multimodal_search(image_path=None, text_query=None):
         query_emb = query_emb.float().cpu()
         query_emb = F.normalize(query_emb, p=2, dim=0).unsqueeze(0)
         
-        # Cosine similarity
         similarities = torch.mm(query_emb, all_image_embeddings.transpose(0, 1)).squeeze(0)
         
-        top_k = 5
-        scores, top_idx_tensors = torch.topk(similarities, k=top_k)
+        if category:
+            mask = torch.tensor(img_categories == category)
+            similarities[~mask] = float('-inf')
+        
+        k = offset + limit
+        if k > len(similarities):
+            k = len(similarities)
+            
+        scores, top_idx_tensors = torch.topk(similarities, k=k)
         
         results = []
-        for i in range(top_k):
+        for i in range(offset, len(scores)):
             idx = int(top_idx_tensors[i])
             score = float(scores[i])
+            
+            if score == float('-inf'):
+                break
             
             # For image embeddings, the stored idx is actually the article_id
             article_id = all_image_idx[idx].item()

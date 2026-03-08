@@ -58,14 +58,13 @@
     </nav>
 
     <div class="category-nav">
-        <a href="#">Women</a>
-        <a href="#">Men</a>
-        <a href="#">Divided</a>
-        <a href="#">Baby</a>
-        <a href="#">Kids</a>
+        <a href="#" data-category="Ladieswear">Women</a>
+        <a href="#" data-category="Menswear">Men</a>
+        <a href="#" data-category="Divided">Divided</a>
+        <a href="#" data-category="Baby/Children">Baby & Kids</a>
+        <a href="#" data-category="Sport">Sport</a>
         <a href="#">HOME</a>
         <a href="#">Beauty</a>
-        <a href="#">Sport</a>
         <a href="#">Sustainability</a>
     </div>
 
@@ -166,6 +165,14 @@
                         </div>
                     </div>
                     <div id="results-grid" class="results-grid"></div>
+
+                    <div class="pagination-controls hidden" id="pagination-controls"
+                        style="text-align: center; margin-top: 3rem; margin-bottom: 2rem;">
+                        <button type="button" id="load-more-btn" class="search-submit-btn"
+                            style="width: auto; padding: 0.8rem 2.5rem; border-radius: 30px; background-color: white; color: black; border: 1px solid #ddd;">
+                            Load More
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
